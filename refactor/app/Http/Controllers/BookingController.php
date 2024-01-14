@@ -2,6 +2,8 @@
 
 namespace DTApi\Http\Controllers;
 
+use Illuminate\Support\Facades\Auth;
+use App\Models\User; // Adjust the namespace based on your project structure
 use DTApi\Models\Job;
 use DTApi\Http\Requests;
 use DTApi\Models\Distance;
@@ -17,16 +19,20 @@ class BookingController extends Controller
 
     /**
      * @var BookingRepository
+     * @var User
      */
     protected $repository;
+    
 
     /**
      * BookingController constructor.
      * @param BookingRepository $bookingRepository
      */
-    public function __construct(BookingRepository $bookingRepository)
+
+    // Renamed the parameter for better clarity and consistency. 
+    public function __construct(BookingRepository $repository)
     {
-        $this->repository = $bookingRepository;
+        $this->repository = $repository;
     }
 
     /**
@@ -35,17 +41,28 @@ class BookingController extends Controller
      */
     public function index(Request $request)
     {
-        if($user_id = $request->get('user_id')) {
-
+        $authenticatedUser = Auth::user();
+        /**
+         * Returning early helps to decrease the amount of nesting, resulting in code that is easier to follow. 
+         * In the revamped code, the declaration is first made and the if statement verifies that $user_id holds a valid value. 
+         * If $user_id is not null, undefined, or an empty string, then the code within the if statement will be performed.
+         */
+        $user_id = $request->get('user_id');
+        if ($user_id) {
             $response = $this->repository->getUsersJobs($user_id);
-
+            // Consider using the response() helper method consistently for all responses.
+            return response()->json($response);
         }
-        elseif($request->__authenticatedUser->user_type == env('ADMIN_ROLE_ID') || $request->__authenticatedUser->user_type == env('SUPERADMIN_ROLE_ID'))
-        {
+
+        /**
+         * The newly optimized code utilizes Laravel's configuration system (config) to retrieve the ID for both the admin role and super admin role. 
+         * This not only enhances readability, but also centralizes the process and aligns with Laravel's standards. It streamlines the management of configuration settings, making it effortlessly manageable.
+         */
+        if ($authenticatedUser->user_type == config('app.admin_role_id') || $authenticatedUser->user_type == config('app.superadmin_role_id')) {
             $response = $this->repository->getAll($request);
+            // Consider using the response() helper method consistently for all responses.
+            return response()->json($response);
         }
-
-        return response($response);
     }
 
     /**
@@ -55,8 +72,8 @@ class BookingController extends Controller
     public function show($id)
     {
         $job = $this->repository->with('translatorJobRel.user')->find($id);
-
-        return response($job);
+        // Consider using the response() helper method consistently for all responses.
+        return response()->json($job);
     }
 
     /**
@@ -65,12 +82,11 @@ class BookingController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $request->all();
-
-        $response = $this->repository->store($request->__authenticatedUser, $data);
-
-        return response($response);
-
+        $authenticatedUser = Auth::user();
+        // Eliminates unnecessary variable assignment.
+        $response = $this->repository->store($authenticatedUser, $request->all());
+        // Consider using the response() helper method consistently for all responses.
+        return response()->json($response);
     }
 
     /**
@@ -80,11 +96,13 @@ class BookingController extends Controller
      */
     public function update($id, Request $request)
     {
-        $data = $request->all();
-        $cuser = $request->__authenticatedUser;
-        $response = $this->repository->updateJob($id, array_except($data, ['_token', 'submit']), $cuser);
 
-        return response($response);
+        $data = $request->all();
+        $cuser = Auth::user();
+        // Laravel provides a more concise except method on collections, making the code cleaner.
+        $response = $this->repository->updateJob($id, $data->except(['_token', 'submit']), $cuser);
+        // Consider using the response() helper method consistently for all responses.
+        return response()->json($response);
     }
 
     /**
@@ -93,12 +111,11 @@ class BookingController extends Controller
      */
     public function immediateJobEmail(Request $request)
     {
-        $adminSenderEmail = config('app.adminemail');
+        // To simplify, I took out the variable adminSenderEmail from the query because it wasn't necessary.
         $data = $request->all();
-
         $response = $this->repository->storeJobEmail($data);
-
-        return response($response);
+        // Consider using the response() helper method consistently for all responses.
+        return response()->json($response);
     }
 
     /**
@@ -107,12 +124,11 @@ class BookingController extends Controller
      */
     public function getHistory(Request $request)
     {
-        if($user_id = $request->get('user_id')) {
-
+        if ($user_id = $request->get('user_id')) {
             $response = $this->repository->getUsersJobsHistory($user_id, $request);
-            return response($response);
+            // Consider using the response() helper method consistently for all responses.
+            return response()->json($response);
         }
-
         return null;
     }
 
@@ -123,21 +139,19 @@ class BookingController extends Controller
     public function acceptJob(Request $request)
     {
         $data = $request->all();
-        $user = $request->__authenticatedUser;
-
+        $user = Auth::user();
         $response = $this->repository->acceptJob($data, $user);
-
-        return response($response);
+        // Consider using the response() helper method consistently for all responses.
+        return response()->json($response);
     }
 
     public function acceptJobWithId(Request $request)
     {
         $data = $request->get('job_id');
-        $user = $request->__authenticatedUser;
-
+        $user = Auth::user();
         $response = $this->repository->acceptJobWithId($data, $user);
-
-        return response($response);
+        // Consider using the response() helper method consistently for all responses.
+        return response()->json($response);
     }
 
     /**
@@ -147,11 +161,10 @@ class BookingController extends Controller
     public function cancelJob(Request $request)
     {
         $data = $request->all();
-        $user = $request->__authenticatedUser;
-
+        $user = Auth::user();
         $response = $this->repository->cancelJobAjax($data, $user);
-
-        return response($response);
+        // Consider using the response() helper method consistently for all responses.
+        return response()->json($response);
     }
 
     /**
@@ -161,21 +174,17 @@ class BookingController extends Controller
     public function endJob(Request $request)
     {
         $data = $request->all();
-
         $response = $this->repository->endJob($data);
-
-        return response($response);
-
+        // Consider using the response() helper method consistently for all responses.
+        return response()->json($response);
     }
 
     public function customerNotCall(Request $request)
     {
         $data = $request->all();
-
         $response = $this->repository->customerNotCall($data);
-
-        return response($response);
-
+        // Consider using the response() helper method consistently for all responses.
+        return response()->json($response);
     }
 
     /**
@@ -184,92 +193,54 @@ class BookingController extends Controller
      */
     public function getPotentialJobs(Request $request)
     {
-        $data = $request->all();
-        $user = $request->__authenticatedUser;
-
+        // Removed the data Variable because of no use of it;
+        $user = Auth::user();
         $response = $this->repository->getPotentialJobs($user);
-
-        return response($response);
+        // Consider using the response() helper method consistently for all responses.
+        return response()->json($response);
     }
 
     public function distanceFeed(Request $request)
     {
         $data = $request->all();
 
-        if (isset($data['distance']) && $data['distance'] != "") {
-            $distance = $data['distance'];
-        } else {
-            $distance = "";
-        }
-        if (isset($data['time']) && $data['time'] != "") {
-            $time = $data['time'];
-        } else {
-            $time = "";
-        }
-        if (isset($data['jobid']) && $data['jobid'] != "") {
-            $jobid = $data['jobid'];
-        }
+        // Replaces the if-else statement with a ternary operator for better clarity.
+        $distance = $data['distance'] ?? "";
+        $time = $data['time'] ?? "";
+        $session = $data['session_time'] ?? "";
+        $flagged = ($data['flagged'] == true) ? "yes" : "no";
+        $manually_handled = ($data['manually_handled'] == true) ? "yes" : "no";
+        $by_admin = ($data['by_admin'] == true) ? "yes" : "no";
+        $admincomment = $data['admincomment'] ?? "";
+        $jobid = $data['jobid'] ?? 0;
 
-        if (isset($data['session_time']) && $data['session_time'] != "") {
-            $session = $data['session_time'];
-        } else {
-            $session = "";
-        }
+        // To simplify, I took out the variable name from the query because it wasn't necessary.
+        $this->updateDistance($jobid, $distance, $time);
 
-        if ($data['flagged'] == 'true') {
-            if($data['admincomment'] == '') return "Please, add comment";
-            $flagged = 'yes';
-        } else {
-            $flagged = 'no';
-        }
-        
-        if ($data['manually_handled'] == 'true') {
-            $manually_handled = 'yes';
-        } else {
-            $manually_handled = 'no';
-        }
+        // To simplify, I took out the variable name from the query because it wasn't necessary.
+        $this->updateJob($jobid, $admincomment, $session, $flagged, $manually_handled, $by_admin);
 
-        if ($data['by_admin'] == 'true') {
-            $by_admin = 'yes';
-        } else {
-            $by_admin = 'no';
-        }
-
-        if (isset($data['admincomment']) && $data['admincomment'] != "") {
-            $admincomment = $data['admincomment'];
-        } else {
-            $admincomment = "";
-        }
-        if ($time || $distance) {
-
-            $affectedRows = Distance::where('job_id', '=', $jobid)->update(array('distance' => $distance, 'time' => $time));
-        }
-
-        if ($admincomment || $session || $flagged || $manually_handled || $by_admin) {
-
-            $affectedRows1 = Job::where('id', '=', $jobid)->update(array('admin_comments' => $admincomment, 'flagged' => $flagged, 'session_time' => $session, 'manually_handled' => $manually_handled, 'by_admin' => $by_admin));
-
-        }
-
-        return response('Record updated!');
+        // Consider using the response() helper method consistently for all responses.
+        return response()->json("Record updated!");
     }
 
     public function reopen(Request $request)
     {
         $data = $request->all();
         $response = $this->repository->reopen($data);
-
-        return response($response);
+        // Consider using the response() helper method consistently for all responses.
+        return response()->json($response);
     }
 
     public function resendNotifications(Request $request)
     {
-        $data = $request->all();
-        $job = $this->repository->find($data['jobid']);
+        // $data = $request->all();
+        // To simplify, I took out the variable of $data from the below function because it wasn't necessary.
+        $job = $this->repository->find($request->get('jobid'));
         $job_data = $this->repository->jobToData($job);
         $this->repository->sendNotificationTranslator($job, $job_data, '*');
-
-        return response(['success' => 'Push sent']);
+        // Consider using the response() helper method consistently for all responses.
+        return response()->json(['success' => 'Push sent']);
     }
 
     /**
@@ -279,16 +250,37 @@ class BookingController extends Controller
      */
     public function resendSMSNotifications(Request $request)
     {
-        $data = $request->all();
-        $job = $this->repository->find($data['jobid']);
-        $job_data = $this->repository->jobToData($job);
+
+        // To simplify, I took out the variable of $data and $job_data  from the below function because it wasn't necessary.
+        $job = $this->repository->find($request->get('jobid'));
 
         try {
             $this->repository->sendSMSNotificationToTranslator($job);
-            return response(['success' => 'SMS sent']);
+            // Consider using the response() helper method consistently for all responses.
+            return response()->json(['success' => 'SMS sent']);
         } catch (\Exception $e) {
-            return response(['success' => $e->getMessage()]);
+            // Consider using the response() helper method consistently for all responses.
+            return response()->json(['success' => $e->getMessage()]);
         }
     }
 
+    protected function updateDistance($jobid, $distance, $time)
+    {
+        if ($time || $distance) {
+            Distance::where('job_id', $jobid)->update(['distance' => $distance, 'time' => $time]);
+        }
+    }
+
+    protected function updateJob($jobid, $admincomment, $session, $flagged, $manually_handled, $by_admin)
+    {
+        if ($admincomment || $session || $flagged || $manually_handled || $by_admin) {
+            Job::where('id', $jobid)->update([
+                'admin_comments' => $admincomment,
+                'flagged' => $flagged,
+                'session_time' => $session,
+                'manually_handled' => $manually_handled,
+                'by_admin' => $by_admin,
+            ]);
+        }
+    }
 }

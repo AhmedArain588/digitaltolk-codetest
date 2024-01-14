@@ -23,10 +23,16 @@ What I expect in your repo:
 
 X. A readme with:   Your thoughts about the code. What makes it amazing code. Or what makes it ok code. Or what makes it terrible code. How would you have done it. Thoughts on formatting, structure, logic.. The more details that you can provide about the code (what's terrible about it or/and what is good about it) the easier for us to assess your coding style, mentality etc
 
+X. Ans : I write all the details in points in another file named as "README_With_My_Thoughts", present in same directory where "README" file present, also pushed on GIT
+
 And 
 
 Y.  Refactor it if you feel it needs refactoring. The more love you put into it. The easier for us to asses your thoughts, code principles etc
 
+Y. Ans : I refactored the code on original files, but pushed the code after refactor, so yu will easily get the changes that i made, also with every funcion in which i updated any code (refactored), i aadded the comments on top of every function in service class and also added comments  in controller as well.
+
+
+Z. made the test cases classes as well in tests, you can see that in repository taht i pushed.
 
 IMPORTANT: Make two commits. First commit with original code. Second with your refactor so we can easily trace changes. 
 
